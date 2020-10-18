@@ -31,6 +31,7 @@
         generateSite = pkgs.writeScript "generate-site" ''
           mkdir build
           cp -rf ${self.defaultPackage.x86_64-linux}/* build/
+          chmod -R a+rw build/
         '';
       in {
         type = "app";
