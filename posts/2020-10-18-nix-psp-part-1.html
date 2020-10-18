@@ -1,1 +1,417 @@
-/nix/store/76vx9za61g3i60ar9hygb4y9nkd2kz49-styx-site-page
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nix PSP Toolchain Part 1: Main Toolchain - Nix Toolchain Blog</title>
+<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+<link href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/monokai.min.css" rel="stylesheet" type="text/css" />
+<link href="//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,400,600,700,300&subset=latin,cyrillic-ext,latin-ext,cyrillic" rel="stylesheet" type="text/css" />
+<link href="https://juliosueiras-nix.github.io/styles/style.css" rel="stylesheet" type="text/css" />
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+<link rel="shortcut icon" href="/favicon.png">
+
+<meta name="description" content="Ghostwriter example description">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta property="og:title" content="Nix Toolchain Blog">
+<meta property="og:description" content="A Blog focus on Various Nix Toolchain Porting">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://juliosueiras-nix.github.io/">
+</head>
+<body>
+<div id="wrapper">
+<header class="site-header">
+<div class="container">
+<div class="site-title-wrapper">
+<h1 class="site-title">
+<a title="Nix Toolchain Blog" href="https://juliosueiras-nix.github.io/">Nix Toolchain Blog</a>
+</h1>
+
+<!-- rss -->
+
+
+<a class="button-square button-social hint--top" data-hint="Twitter" title="Twitter" href="https://twitter.com/juliosueiras">
+  <i class="fa fa-twitter"></i>
+</a>
+
+
+<a class="button-square button-social hint--top" data-hint="Gitlab" title="Gitlab" href="https://gitlab.com/juliosueiras">
+  <i class="fa fa-gitlab"></i>
+</a>
+
+
+
+<a class="button-square button-social hint--top" data-hint="Github" title="Github" href="https://github.com/juliosueiras">
+  <i class="fa fa-github-alt"></i>
+</a>
+
+
+
+
+
+
+<a class="button-square button-social hint--top" data-hint="LinkedIn" title="LinkedIn" href="https://www.linkedin.com/in/julio-alejandro-tain-sueiras-5b88a862">
+  <i class="fa fa-linkedin"></i>
+</a>
+
+
+
+
+
+<a class="button-square button-social hint--top" data-hint="Email" title="Email" href="mailto:juliosueiras@gmail.com">
+  <i class="fa fa-envelope"></i>
+</a>
+
+
+</div>
+
+<ul class="site-nav">
+<li class="site-nav-item"><a href="https://juliosueiras-nix.github.io/about.html" title="About">About</a></li>
+
+</ul>
+
+</header>
+<div id="container">
+<div class="container">
+  <article class="post-container" itemscope="" itemtype="http://schema.org/BlogPosting">
+    <header class="post-header">
+      <h1 class="post-title" itemprop="name headline">Nix PSP Toolchain Part 1: Main Toolchain</h1>
+      
+      <p class="post-date">
+        <span>Published <time datetime="2020-10-18" itemprop="datePublished">Oct 18, 2020</time></span>
+        
+      </p>
+    </header>
+
+    <div class="post-content clearfix" itemprop="articleBody">
+      <p><strong>NOTE: This is a 5 part series blog focusing on the steps to port the PSP toolchain to Nix</strong></p>
+
+<h1 id="tableofcontents">Table of Contents</h1>
+
+<ul>
+<li><a href="#why-port-the-psp-toolchain-to-nix">Why port the PSP toolchain to Nix?</a></li>
+<li><a href="#the-code">The Code</a></li>
+<li><a href="#part-11-nix-flakes">Part 1.1 Nix Flakes</a>
+
+<ul>
+<li><a href="#setting-up-the-flake-structure">Setting up the flake structure</a></li>
+</ul></li>
+<li><a href="#part-12-investigating--understating-the-psp-toolchain">Part 1.2 Investigating &amp; Understating the PSP Toolchain</a></li>
+<li><a href="#part-13-starting-the-port-process">Part 1.3 Starting the Port Process</a>
+
+<ul>
+<li><a href="#binutils">Binutils</a></li>
+<li><a href="#stage-1">Stage 1</a>
+
+<ul>
+<li><a href="#gcc">GCC</a></li>
+</ul></li>
+</ul></li>
+</ul>
+
+<h1 id="whyportthepsptoolchaintonix">Why port the PSP toolchain to Nix?</h1>
+
+<p>Because why not, but in serious, I decided to port the toolchain as a challenge for myself, and also due to the desire to build homebrew and plugins in a reproducible format(no more docker or github releases)</p>
+
+<h1 id="thecode">The Code</h1>
+
+<p>The ported toolchain is located at <a href="https://github.com/juliosueiras-nix/nix-psp">here</a></p>
+
+<h1 id="part1.1nixflakes">Part 1.1 Nix Flakes</h1>
+
+<p>I decided right away to use <a href="https://www.tweag.io/blog/2020-05-25-flakes/">nix flakes</a>, since the toolchain need to use a pinned nixpkgs for better reproducibility (also to reduce cached size for my poor digitalocean space)</p>
+
+<h2 id="settinguptheflakestructure">Setting up the flake structure</h2>
+
+<p>Setting up flake is quite straight forward only needing </p>
+
+<pre><code class="shell">$ nix flake init
+</code></pre>
+
+<p>The next step is just pinning the nixpkgs</p>
+
+<pre><code class="nix">{
+  description = &quot;PSP Toolchain&quot;;
+
+  inputs.nixpkgs.url =
+    &quot;github:NixOS/nixpkgs/469f14ef0fade3ae4c07e4977638fdf3afc29e08&quot;;
+
+  outputs = { self, nixpkgs }: {
+  };
+}
+</code></pre>
+
+<p>and thats it at least for the basic setup of flake, for now we can leave it like this until we start actually adding the toolchain packages</p>
+
+<h1 id="part1.2investigatingunderstatingthepsptoolchain">Part 1.2 Investigating &amp; Understating the PSP Toolchain</h1>
+
+<p>To port the toolchain, the current method need to be understood first</p>
+
+<p>After two days of running the scripts and going through various repos, the conclusions of the existing toolchain are these:</p>
+
+<ul>
+<li><p>the main toolchain process is located in <a href="https://github.com/pspdev/psptoolchain">psptoolchain</a></p></li>
+<li><p>there are two branches for psptoolchain, where one(master) uses <code>newlib-1.20.0</code> and the other one(toolchain-only) uses <code>newlib-3.3.0</code>, this distinction become important later</p></li>
+<li><p>the toolchain itself is a two stage gcc build process, where it follow the path of <code>binutils -&gt; stage-1 gcc -&gt; newlib -&gt; stage-2 gcc</code></p></li>
+<li><p>the external libraries(SDL, etc) are located in <a href="https://github.com/pspdev/psplibraries">psplibraries</a></p></li>
+</ul>
+
+<h1 id="part1.3startingtheportprocess">Part 1.3 Starting the Port Process</h1>
+
+<h2 id="binutils">Binutils</h2>
+
+<p>Lets start with binutils</p>
+
+<p>This is the original bash script</p>
+
+<pre><code class="bash">#!/bin/bash
+# binutils.sh by Naomi Peori (naomi@peori.ca)
+
+# Exit on errors
+set -e
+
+BINUTILS_VERSION=2.23.2
+
+# Download the source code if it does not already exist.
+download_and_extract https://ftp.gnu.org/pub/gnu/binutils/binutils-&quot;$BINUTILS_VERSION&quot;.tar.bz2 binutils-&quot;$BINUTILS_VERSION&quot;
+
+# Enter the source directory and patch the source code.
+cd binutils-&quot;$BINUTILS_VERSION&quot;
+patch -p1 &lt; ../../patches/binutils-&quot;$BINUTILS_VERSION&quot;-PSP.patch
+
+
+# Create and enter the build directory.
+mkdir build-psp
+cd build-psp
+
+# Configure the build.
+CFLAGS=&quot;$CFLAGS -I/opt/local/include&quot; \
+  CPPFLAGS=&quot;$CPPFLAGS -I/opt/local/include&quot; \
+  LDFLAGS=&quot;$LDFLAGS -L/opt/local/lib&quot; \
+  ../configure --prefix=&quot;$PSPDEV&quot; --target=&quot;psp&quot; --enable-install-libbfd \
+  --enable-plugins --disable-werror --with-system-zlib
+
+# Compile and install. ( -r is required for building under osx )
+make -j $(num_cpus) clean
+make -r -j $(num_cpus)
+make -j $(num_cpus) install
+make -j $(num_cpus) clean
+
+</code></pre>
+
+<p>This is the same script but converted to nix derivation</p>
+
+<pre><code class="nix">{ src, stdenv, ... }:
+
+stdenv.mkDerivation {
+  name = &quot;psp-binutils&quot;;
+
+  inherit src;
+
+  configureFlags = [
+    &quot;--target=psp&quot;
+    &quot;--enable-install-libbfd&quot;
+    &quot;--disable-werror&quot;
+    &quot;--with-system-zlib&quot;
+  ];
+
+  dontStrip = true;
+  dontDisableStatic = true;
+  hardeningDisable = [ &quot;all&quot; ];
+}
+
+
+</code></pre>
+
+<p>The two changes that is noticable right away is the <code>inherit src;</code>, and no patches are being done in the nix version. These two changes are due to pspdev having a new repo for <a href="https://github.com/pspdev/binutils">binutils</a> which have the patch in the repo itself, and src is being import via <code>fetchTree</code> or hydra input, depending on the type of build is doing.</p>
+
+<p>The <code>fetchTree</code> for above will look like this </p>
+
+<pre><code class="nix">fetchTree {
+  type = &quot;tarball&quot;;
+  url = &quot;https://github.com/pspdev/binutils/archive/b8577007c5e0a463b0fa9229efed59165ce13508.tar.gz&quot;;
+  narHash = &quot;sha256-MM76SqNk0ltXu5Kc3g+yZ8T5LQvDUDtW3t4rTSFyfFA=&quot;;
+};
+</code></pre>
+
+<p>The important part for the nix derivation above when doing toolchain porting is to introduce attributes like <code>dontStrip</code>, <code>dontDisableStatic</code>, <code>hardeningDisable</code>, stripping and hardening are normally useful in nix packages, however due to this being a new toolchain, having any hardening mean introducing new configura flags that might introduce issues</p>
+
+<h2 id="stage1">Stage 1</h2>
+
+<p>For stage 1, we need gcc, newlib and pspsdk data(and only the data)</p>
+
+<h3 id="gcc">GCC</h3>
+
+<p>The process is very similar to binutils as well</p>
+
+<p>Bash version:</p>
+
+<pre><code class="bash">#!/bin/bash
+# gcc-stage1.sh by Naomi Peori (naomi@peori.ca) customized by yreeen(yreeen@gmail.com)
+
+ ## set gcc version
+ GCC_VERSION=9.3.0
+ GMP_VERSION=6.1.2
+ MPC_VERSION=1.1.0
+ MPFR_VERSION=4.0.2
+ ISL_VERSION=0.21
+
+ ## Exit on errors
+ set -e
+
+ ## Download the source code if it does not already exist.
+ download_and_extract https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/gcc-$GCC_VERSION.tar.gz gcc-$GCC_VERSION
+
+ ## Download the library source code if it does not already exist.
+ download_and_extract https://ftp.gnu.org/gnu/gmp/gmp-$GMP_VERSION.tar.bz2 gmp-$GMP_VERSION
+ download_and_extract https://ftp.gnu.org/gnu/mpc/mpc-$MPC_VERSION.tar.gz mpc-$MPC_VERSION
+ download_and_extract https://ftp.gnu.org/gnu/mpfr/mpfr-$MPFR_VERSION.tar.bz2 mpfr-$MPFR_VERSION
+ download_and_extract http://isl.gforge.inria.fr/isl-$ISL_VERSION.tar.gz isl-$ISL_VERSION
+
+ ## Enter the source directory and patch the source code.
+ cd gcc-$GCC_VERSION
+ patch -p1 &lt; ../../patches/gcc-$GCC_VERSION-PSP.patch
+
+ ## Unpack the library source code.
+ ln -fs ../gmp-$GMP_VERSION gmp
+ ln -fs ../mpc-$MPC_VERSION mpc
+ ln -fs ../mpfr-$MPFR_VERSION mpfr
+ ln -fs ../isl-$ISL_VERSION isl
+ 
+ ## Create and enter the build directory.
+ mkdir build-psp
+ cd build-psp
+
+ ## Under macOS we need the gnu variant of sed
+ if [ &quot;$(uname)&quot; == &quot;Darwin&quot; ]; then
+   export PATH=&quot;/usr/local/opt/gnu-sed/libexec/gnubin:/opt/local/libexec/gnubin:$PATH&quot;
+ fi
+
+ ## Configure the build.
+ CFLAGS=&quot;$CFLAGS -I/opt/local/include&quot; \
+   CPPFLAGS=&quot;$CPPFLAGS -I/opt/local/include&quot; \
+   LDFLAGS=&quot;$LDFLAGS -L/opt/local/lib&quot; \
+   ../configure --prefix=&quot;$PSPDEV&quot; --target=&quot;psp&quot; --enable-languages=&quot;c&quot; \
+   --enable-lto --with-newlib --without-headers --disable-libssp
+
+ ## Compile and install.
+ make -j $(num_cpus) clean
+ make -j $(num_cpus)
+ make -j $(num_cpus) install
+ make -j $(num_cpus) clean
+
+</code></pre>
+
+<p>Nix version:</p>
+
+<pre><code class="nix">{ src, stdenv, lib, flex, binutils, file, ... }:
+
+let
+  gccDepsLibs = import ./libs.nix;
+in stdenv.mkDerivation {
+  name = &quot;psp-gcc&quot;;
+
+  inherit src;
+
+  buildInputs = [ file binutils flex ];
+
+  configureScript = &quot;../configure&quot;;
+
+  configureFlags = [
+    &quot;--with-as=${binutils}/bin/psp-as&quot;
+    &quot;--with-ar=${binutils}/bin/psp-ar&quot;
+    &quot;--with-ld=${binutils}/bin/psp-ld&quot;
+    &quot;--target=psp&quot;
+    &quot;--enable-lto&quot;
+    &quot;--with-newlib&quot;
+    &quot;--without-headers&quot;
+    &quot;--disable-libssp&quot;
+    &quot;--enable-languages=c&quot;
+  ];
+
+  preConfigure = ''
+    ln -fs ${gccDepsLibs.gmpLib} gmp
+    ln -fs ${gccDepsLibs.mpcLib} mpc
+    ln -fs ${gccDepsLibs.mpfrLib} mpfr
+    ln -fs ${gccDepsLibs.islLib} isl
+
+    mkdir build-psp
+    cd build-psp
+  '';
+
+  dontDisableStatic = true;
+  dontStrip = true;
+  hardeningDisable = [ &quot;all&quot; ];
+}
+
+</code></pre>
+
+<p>However gcc need the corresponding libraries like gmp.</p>
+
+<p>GCC Deps Libraries:</p>
+
+<pre><code class="nix">let
+  GMP_VERSION = &quot;6.1.2&quot;;
+  MPC_VERSION = &quot;1.1.0&quot;;
+  MPFR_VERSION = &quot;4.0.2&quot;;
+  ISL_VERSION = &quot;0.21&quot;;
+in {
+  gmpLib = fetchTarball {
+    url = &quot;https://ftp.gnu.org/gnu/gmp/gmp-${GMP_VERSION}.tar.bz2&quot;;
+    sha256 = &quot;15xl9qaacbq9i5822g8nvr4xx859pypvxjngcig5344pyi14rck5&quot;;
+  };
+
+  mpcLib = fetchTarball {
+    url = &quot;https://ftp.gnu.org/gnu/mpc/mpc-${MPC_VERSION}.tar.gz&quot;;
+    sha256 = &quot;1945hsrqva71z0jv00hhbp1j90n7gf3hcf8bynnrgdb3yqk138lj&quot;;
+  };
+
+  mpfrLib = fetchTarball {
+    url = &quot;https://ftp.gnu.org/gnu/mpfr/mpfr-${MPFR_VERSION}.tar.bz2&quot;;
+    sha256 = &quot;0jbw7awqlhs80svz2m5619sg1dw0kb8fiw3a3x228dzcxxmdk94g&quot;;
+  };
+
+  islLib = fetchTarball {
+    url = &quot;http://isl.gforge.inria.fr/isl-${ISL_VERSION}.tar.gz&quot;;
+    sha256 = &quot;062jxq3wk4dajs15sn0na3fjjw7bq88ir4frnfiildkw4a2zscr6&quot;;
+  };
+}
+
+</code></pre>
+
+
+       
+    </div>
+  </article>
+</div>
+
+</div>
+</div>
+<footer class="footer">
+  <div class="container">
+    <div class="site-title-wrapper">
+      <h1 class="site-title">
+          <a title="Nix Toolchain Blog" href="https://juliosueiras-nix.github.io/">Nix Toolchain Blog</a>
+      </h1>
+      <a class="button-square button-jump-top js-jump-top" href="#">
+          <i class="fa fa-angle-up"></i>
+      </a>
+    </div>
+
+    <p class="footer-copyright">
+        <span>&copy; 2020. All rights reserved. 
+</span>
+    </p>
+    <p class="footer-copyright">
+        <span><a href="https://github.com/roryg/ghostwriter">Ghostwriter theme</a> By <a href="http://jollygoodthemes.com">JollyGoodThemes</a></span>
+    </p>
+  </div>
+</footer>
+<script crossorigin="anonymous" src="//code.jquery.com/jquery-3.1.1.min.js"></script>
+<script crossorigin="anonymous" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script crossorigin="anonymous" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/languages/nix.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+</body>
+</html>
