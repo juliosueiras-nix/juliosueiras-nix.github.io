@@ -1,3 +1,3 @@
-with import (fetchTarball https://github.com/NixOS/nixpkgs/archive/469f14ef0fade3ae4c07e4977638fdf3afc29e08.tar.gz) {};
+with import (fetchTarball https://github.com/nixos/nixpkgs/archive/3506bce1d405f078c09a5201e3bb46eb64d5e9e7.tar.gz) {};
 
 nixFlakes
