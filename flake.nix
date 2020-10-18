@@ -3,6 +3,8 @@
 
   inputs.nixpkgs.url =
     "github:NixOS/nixpkgs/469f14ef0fade3ae4c07e4977638fdf3afc29e08";
+  
+  edition = 201909;
 
   outputs = { self, nixpkgs }:
     let
