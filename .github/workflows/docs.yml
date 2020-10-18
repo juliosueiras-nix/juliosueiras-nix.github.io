@@ -14,7 +14,7 @@ jobs:
     - run: "nix-build get-flake.nix"
     - run: mkdir -p ~/.config/nix
     - run: echo "experimental-features = nix-command flakes ca-references" >> ~/.config/nix/nix.conf
-    - run: "./result/bin/nix app .#generateSite"
+    - run: "./result/bin/nix run .#generateSite"
     - run: "touch build/.nojekyll"
     - name: Deploy Docs to Pages
       uses: JamesIves/github-pages-deploy-action@3.5.9
