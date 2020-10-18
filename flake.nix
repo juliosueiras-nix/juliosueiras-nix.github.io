@@ -30,7 +30,7 @@
       generateSite = let
         generateSite = pkgs.writeScript "generate-site" ''
           mkdir build
-          cp -rf ${self.defaultPackage.x86_64-linux}/* build/
+          cp -rf -L ${self.defaultPackage.x86_64-linux}/* build/
           chmod -R a+rw build/
         '';
       in {
