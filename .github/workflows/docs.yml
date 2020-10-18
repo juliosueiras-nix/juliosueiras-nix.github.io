@@ -1,0 +1,24 @@
+name: "Push Docs"
+on:
+  push:
+    branches:
+      - master
+jobs:
+  push-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+    - uses: cachix/install-nix-action@v10
+    - run: "nix-build get-flake.nix"
+    - run: mkdir -p ~/.config/nix
+    - run: echo "experimental-features = nix-command flakes ca-references" >> ~/.config/nix/nix.conf
+    - run: "./result/bin/nix app .#generateSite"
+    - run: "touch build/.nojekyll"
+    - name: Deploy Docs to Pages
+      uses: JamesIves/github-pages-deploy-action@3.5.9
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: build

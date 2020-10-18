@@ -27,6 +27,16 @@
     in {
       defaultPackage.x86_64-linux = pkgs.callPackage ./src { };
 
+      generateSite = let
+        generateSite = pkgs.writeScript "generate-site" ''
+          mkdir build
+          cp -rf ${self.defaultPackage.x86_64-linux}/* build/
+        '';
+      in {
+        type = "app";
+        program = "${generateSite}";
+      };
+
       devShell.x86_64-linux = pkgs.mkShell { buildInputs = [ pkgs.styx ]; };
     };
 }
